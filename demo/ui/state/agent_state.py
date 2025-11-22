@@ -1,17 +1,3 @@
-import mesop as me
-
-
-@me.stateclass
-class AgentState:
-    """Agents List State"""
-
-    agent_dialog_open: bool = False
-    agent_address: str = ''
-    agent_name: str = ''
-    agent_description: str = ''
-    input_modes: list[str]
-    output_modes: list[str]
-    stream_supported: bool = False
-    push_notifications_supported: bool = False
-    error: str = ''
-    agent_framework_type: str = ''
+version https://git-lfs.github.com/spec/v1
+oid sha256:49e3b4603ebd980e31980e0eb9abdad5d79cd8ded8d826474b62ddbfa1895ac9
+size 396

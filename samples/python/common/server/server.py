@@ -10,6 +10,7 @@ from starlette.applications import Starlette
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 
+
 from common.server.task_manager import TaskManager
 from common.types import (
     A2ARequest,
@@ -64,8 +65,16 @@ class A2AServer:
 
         uvicorn.run(self.app, host=self.host, port=self.port)
 
-    def _get_agent_card(self, request: Request) -> JSONResponse:
+
+    def _get_agent_card(self, request: Request):
+        print(f"DEBUG: self.agent_card = {self.agent_card}")  # 確認是 list 且包含兩個物件
+        if isinstance(self.agent_card, list):
+            return JSONResponse(
+                [card.model_dump(exclude_none=True) for card in self.agent_card]
+            )
         return JSONResponse(self.agent_card.model_dump(exclude_none=True))
+
+
 
     async def _process_request(self, request: Request):
         try:

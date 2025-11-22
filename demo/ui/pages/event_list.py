@@ -1,17 +1,3 @@
-import mesop as me
-
-from components.event_viewer import event_list
-from components.header import header
-from components.page_scaffold import page_frame, page_scaffold
-from state.agent_state import AgentState
-from state.state import AppState
-
-
-def event_list_page(app_state: AppState):
-    """Agents List Page"""
-    state = me.state(AgentState)
-    with page_scaffold():  # pylint: disable=not-context-manager
-        with page_frame():
-            with header('Event List', 'list'):
-                pass
-            event_list()
+version https://git-lfs.github.com/spec/v1
+oid sha256:fdc6f4e21fbfb25c95cd2407b5b3fa6cf4a1ef4817a9bbacc540b918b9a862a3
+size 530

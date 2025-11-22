@@ -1,13 +1,3 @@
-from components.header import header
-from components.page_scaffold import page_frame, page_scaffold
-from components.task_card import task_card
-from state.state import AppState
-
-
-def task_list_page(app_state: AppState):
-    """Task List Page"""
-    with page_scaffold():  # pylint: disable=not-context-manager
-        with page_frame():
-            with header('Task List', 'task'):
-                pass
-            task_card(app_state.task_list)
+version https://git-lfs.github.com/spec/v1
+oid sha256:4b8337956714a7d2fa54b8bfe64ab2955aee8064ac1335b610651aefb6b2b43b
+size 446

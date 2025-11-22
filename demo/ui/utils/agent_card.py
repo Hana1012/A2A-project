@@ -1,11 +1,3 @@
-import requests
-
-from common.types import AgentCard
-
-
-def get_agent_card(remote_agent_address: str) -> AgentCard:
-    """Get the agent card."""
-    agent_card = requests.get(
-        f'http://{remote_agent_address}/.well-known/agent.json'
-    )
-    return AgentCard(**agent_card.json())
+version https://git-lfs.github.com/spec/v1
+oid sha256:14d0fde13d34585d91027b27467e1e666ff6228d2bdb272a22c3268cc5754d1a
+size 287
