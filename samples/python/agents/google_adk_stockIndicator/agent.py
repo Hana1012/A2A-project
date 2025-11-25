@@ -1,6 +1,7 @@
 import requests
 import numpy as np
-#import pandas as pd
+from arch import arch_model
+import pandas as pd
 from typing import Any, List, Optional
 from google.adk.agents.llm_agent import LlmAgent
 from google.adk.artifacts import InMemoryArtifactService
@@ -74,13 +75,47 @@ class StockIndicatorAgent(AgentWithTaskManager):
             "upper": round(upper, 2),
             "lower": round(lower, 2)
         }
+    
+    def fetch_news_sentiment(
+        self, 
+        tickers: str, 
+        time_from: str = None, 
+        time_to: str = None, 
+        topics: str = None, 
+        limit: int = 50, 
+        sort: str = "LATEST"
+    ) -> dict:
+        url = "https://www.alphavantage.co/query"
+        params = {
+            "function": "NEWS_SENTIMENT",
+            "tickers": tickers,
+            "apikey": self.api_key,  
+            "limit": limit,
+            "sort": sort
+        }
+        if time_from:
+            params["time_from"] = time_from
+        if time_to:
+            params["time_to"] = time_to
+        if topics:
+            params["topics"] = topics
+
+        try:
+            response = requests.get(url, params=params)
+            response.raise_for_status()
+            data = response.json()
+            if "Note" in data:
+                return {"status": "error", "message": data["Note"]}
+            if "Error Message" in data:
+                return {"status": "error", "message": data["Error Message"]}
+            return {"status": "success", "data": data.get("feed", [])}
+        except Exception as e:
+            return {"status": "error", "message": str(e)} 
+           
 
     # ===== 分析整合 =====
     def analyze_indicators(self, symbol: str, start_date: str, end_date: str) -> dict:
         """分析 SMA, RSI, MACD, Bollinger Bands, 波動率。"""
-        # 👈 核心修正：使用新的 call_agent 方法來獲取數據
-        #data_result = self.call_agent("market_data_agent", "fetch_stock_data", symbol=symbol, start_date=start_date, end_date=end_date)
-        
         """Fetches historical stock data from Alpha Vantage and filters by date range."""
         url = "https://www.alphavantage.co/query"
         params = {
@@ -90,6 +125,7 @@ class StockIndicatorAgent(AgentWithTaskManager):
             "apikey": self.api_key,
         }
 
+        # 1. 取得股價資料
         try:
             response = requests.get(url, params=params)
             response.raise_for_status()
@@ -139,25 +175,61 @@ class StockIndicatorAgent(AgentWithTaskManager):
         
         if len(closes) < 20:
             return {"status": "error", "message": "資料不足以計算投資指標"}
-        
+        # 2. 計算技術指標
         sma_14 = self._sma(closes, 14)
         rsi_14 = self._rsi(closes, 14)
         macd_result = self._macd(closes)
         bollinger = self._bollinger_bands(closes, 20)
         volatility = round(max(closes) - min(closes), 2)
+
+        # 3. GARCH(1,1) 波動率
+        # ===== 新增 GARCH(1,1) 波動性預測 =====
+        try:
+            returns = df['close'].pct_change().dropna() * 100  # 轉成百分比日報酬率
+            garch_model = arch_model(returns, vol='Garch', p=1, q=1, dist='normal')
+            garch_result = garch_model.fit(disp='off')
+            # 預測下一日波動率
+            garch_forecast = garch_result.forecast(horizon=1)
+            garch_volatility = round(np.sqrt(garch_forecast.variance.values[-1, 0]), 4)
+        except Exception as e:
+            garch_volatility = None
         
+        sentiment_all = {}
+        for dt in df.index:
+            date_str = dt.strftime("%Y%m%dT0000")
+            sentiment_res = self.fetch_news_sentiment(
+                tickers=symbol,
+                time_from=date_str,
+                time_to=dt.strftime("%Y%m%dT2359"),
+                limit=10
+            )
+            sentiment_all[dt.strftime("%Y-%m-%d")] = sentiment_res.get("data", [])
+
+        daily_data = {}
+        for dt in df.index:
+            date_key = dt.strftime("%Y-%m-%d")
+            daily_data[date_key] = {
+                "close": df.loc[dt, "close"],
+                "sma_14": df.loc[dt, "sma_14"],
+                "rsi_14": df.loc[dt, "rsi_14"],
+                "macd": df.loc[dt, "macd"],
+                "macd_signal": df.loc[dt, "macd_signal"],
+                "macd_hist": df.loc[dt, "macd_hist"],
+                "boll_middle": df.loc[dt, "boll_middle"],
+                "boll_upper": df.loc[dt, "boll_upper"],
+                "boll_lower": df.loc[dt, "boll_lower"],
+                "volatility": df.loc[dt, "volatility"],
+                "garch_vol": df.loc[dt, "garch_vol"],
+                "news_sentiment": sentiment_all.get(date_key, [])
+            }
+
         return {
             "status": "success",
             "symbol": symbol,
             "start_date": start_date,
             "end_date": end_date,
-            "sma_14": sma_14,
-            "rsi_14": rsi_14,
-            "macd": macd_result,
-            "bollinger_bands": bollinger,
-            "volatility": volatility,
+            "daily_data": daily_data
         }
-
 
     def _build_agent(self) -> LlmAgent:
         instruction = """

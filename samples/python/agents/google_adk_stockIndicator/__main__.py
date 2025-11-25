@@ -35,12 +35,13 @@ def main(host, port):
         capabilities = AgentCapabilities(streaming=True)
         skill = AgentSkill(
             id='analyze_stock_indicators',
-            name='Analyze Stock Indicators',
+            name='Analyze Stock Indicators & Market Sentiment',
             description=(
                 "Analyze stock prices using historical time series data. \n"
                 "Calculates key investment indicators such as Simple Moving Average (SMA), \n"
                 "Relative Strength Index (RSI), Moving Average Convergence Divergence (MACD), \n"
-                "Bollinger Bands, and price volatility. Provides insights into trend, momentum, \n"
+                "Bollinger Bands, GARCH(1,1) volatility forecast, and price volatility. \n"
+                "Integrates market news sentiment to provide actionable insights into trend, momentum, risk, \n"
                 "and potential support/resistance levels."
             ),
             tags=[
@@ -53,21 +54,26 @@ def main(host, port):
                 'MACD',
                 'Bollinger Bands',
                 'volatility',
+                'GARCH',
+                'news',
+                'sentiment',
                 'investment'
             ],
             examples=[
-                '請幫我分析 AAPL 在 2024-08-01 到 2024-08-31 的技術指標',
-                'Show me RSI and MACD for TSLA stock in the past month.',
-                'What are the Bollinger Bands for MSFT this quarter?',
+                '請幫我分析 AAPL 在 2024-08-01 到 2024-08-31 的技術指標、GARCH 波動率與市場情緒',
+                'Show me RSI, MACD, GARCH volatility, and news sentiment for TSLA stock in the past month.',
+                'What are the Bollinger Bands, GARCH forecast, and news sentiment for MSFT this quarter?',
             ],
         )
 
         agent_card = AgentCard(
-            name='Stock Indicator Agent',
+            name='Stock Indicator & Market Sentiment Agent',
             description=(
-                "An agent that analyzes stock prices using historical time series data.  \n"
-                "It calculates and interprets key investment indicators such as SMA, RSI,MACD, Bollinger Bands, and volatility to provide actionable insights.  \n"
-                "for short-term and long-term trading decisions."
+                "An agent that analyzes stock prices using historical time series data, \n"
+                "calculates key investment indicators (SMA, RSI, MACD, Bollinger Bands, GARCH volatility, and price volatility), \n"
+                "and integrates market news sentiment. \n"
+                "Provides actionable insights for short-term and long-term trading decisions, \n"
+                "including trend, momentum, risk, and potential support/resistance levels."
             ),
             url=f'http://{host}:{port}/',
             version='1.0.0',
@@ -75,7 +81,7 @@ def main(host, port):
             defaultOutputModes=StockIndicatorAgent.SUPPORTED_CONTENT_TYPES,
             capabilities=capabilities,
             skills=[skill],
-            )
+        )
 
 
         server = A2AServer(

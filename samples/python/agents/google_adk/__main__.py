@@ -14,7 +14,6 @@ from common.types import (
 from dotenv import load_dotenv
 from task_manager import AgentTaskManager
 
-
 load_dotenv()
 
 logging.basicConfig(level=logging.INFO)
@@ -34,39 +33,38 @@ def main(host, port):
                 )
 
         capabilities = AgentCapabilities(streaming=True)
+
         # Define agent skill 定義技能
         skill = AgentSkill(
-            id='simulate_big5_investor',
-            name='High Openness (Big Five) Investor Simulation (高開放性（大五人格）投資者模擬)',
+            id='simulate_big5_daily_portfolio',
+            name='High Neuroticism Daily Portfolio Simulation (高神經質每日投資組合模擬)',
             description=(
-                'Simulates the investment behavior of a stock investor based on High Openness Big Five personality traits, '
-                'and decides whether to buy, sell, or hold a stock using technical indicators and market trends. \n'
-                '模擬具有高開放性大五人格特質的股票投資者，結合技術指標和市場趨勢，判斷買入、賣出或持有股票。'
+                'Simulates a daily multi-stock investment portfolio based on High Neuroticism Big Five personality traits. '
+                'The agent allocates initial cash, decides which stocks to buy, sell, or hold each day, '
+                'and adjusts the portfolio according to market data and technical indicators.\n'
+                '模擬每日多股票投資組合，根據高開放性大五人格特質分配初始資金，'
+                '每天根據市場數據和技術指標決定買入、賣出或持有股票，並調整投資組合。'
             ),
-            tags=['investment', 'stock', 'big5', 'finance', 'decision-making', 'simulate'],
+            tags=['investment', 'stock', 'big5', 'finance', 'daily', 'portfolio', 'simulate'],
             examples=[
-                '目前有美金$100,000，請分析 Google 的股票，並模擬從 2024 年 1 月 1 日到 2024 年 6 月 30 日的投資。',
-                '模擬投資 Tesla 股票，時間區間為 2023 年全年，請給出買進、持有或賣出的決策過程。',
-                '請分析 Apple 股票在 2022 年到 2023 年的走勢，並模擬投資策略。',
-                '假設投資資金為 $50,000，模擬 2024 年第一季到第二季投資 Microsoft 股票的決策。',
-                '若持有 Meta 股票，請模擬從 2023 年 7 月到 2023 年 12 月的投資決策與可能的報酬。',
-                '請模擬投資 Nvidia 股票，在 2024 年全年的操作策略與風險控制。',
-                '分析 Amazon 股票於 2023 年的市場表現，並模擬投資策略。',
-                '請針對台積電（TSM）股票模擬 2024 年第一季的投資決策。'
+                '初始資金 $100,000，模擬從 2024-01-01 到 2024-06-30 的每日投資決策。',
+                '假設初始現金 $50,000，模擬 2024 年第一季的每日股票投資組合調整。',
+                '使用 $200,000 初始資金，模擬 Tesla、Apple、Amazon 股票每日投資行為。',
+                '模擬台積電（TSM）股票每日操作策略，期間為 2024 年第一季。'
             ]
         )
 
-
         # Create agent card 創建代理卡片
         agent_card = AgentCard(
-            name='High OpennessInvestment Decision Agent (高開放性人格投資決策代理)',
+            name='High Neuroticism Daily Investment Agent (高神經質每日投資代理)',
             description=(
-                "This agent **simulates stock investment decisions** based on a user's High openness (Big Five) personality traits.  \n"
-                "It evaluates **stock trends**, **technical indicators** (e.g., MACD, RSI, volatility),  \n"
-                "and **makes concrete decisions**: buy, sell, or hold, reflecting the investor's risk tolerance and personality.  \n\n"
+                "This agent **simulates daily multi-stock investment portfolios** based on a user's High Openness (Big Five) personality traits.  \n"
+                "It evaluates **market data**, **technical indicators** (e.g., MACD, RSI, volatility),  \n"
+                "and **decides daily** which stocks to buy, sell, or hold.  \n"
+                "Initial cash is provided, and the portfolio is updated day by day without additional funding.  \n\n"
                 "**中文說明**  \n"
-                "此代理會根據用戶的高開放性人格模擬股票投資決策，結合股價趨勢、技術指標（如 MACD、RSI、波動率）  \n"
-                "給出具體操作建議：買入、賣出或持有，反映該投資者的風險偏好與性格特質。"
+                "此代理會根據用戶高開放性人格特質模擬每日多股票投資組合，結合市場數據和技術指標（如 MACD、RSI、波動率），  \n"
+                "每天決定買入、賣出或持有股票，初始資金由用戶提供，後續投資組合每日更新，不額外增加資金。"
             ),
             url=f'http://{host}:{port}/',
             version='1.0.0',
@@ -75,13 +73,16 @@ def main(host, port):
             capabilities=capabilities,
             skills=[skill],
         )
+
+        # 啟動 A2A server
         server = A2AServer(
             agent_card=agent_card,
-            task_manager=AgentTaskManager(agent=InvestmentAgent()),
+            task_manager=AgentTaskManager(agent=InvestmentAgent(personality={"openness": "high"})),
             host=host,
             port=port,
         )
         server.start()
+
     except MissingAPIKeyError as e:
         logger.error(f'Error: {e}')
         exit(1)
